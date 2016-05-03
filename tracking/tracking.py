@@ -12,14 +12,18 @@ def key_pressed(key_string):
 
 
 def track_single_color(frame, hsv, tracked_points, colors, points_buffer_size, min_radius):
-    lower_color_bound = colors[0]
-    upper_color_bound = colors[1]
+    lower_color_bounds = colors[0]
+    upper_color_bounds = colors[1]
     draw_color = colors[2]
     # construct a mask for the color "green", then perform a series of dilations and erosions
     # to remove any small blobs left in the mask
-    mask = cv2.inRange(hsv, lower_color_bound, upper_color_bound)
+    mask = np.zeros((frame.shape[0], frame.shape[1]), dtype="uint8")
+    for i in xrange(0, len(lower_color_bounds)):
+        mask = cv2.bitwise_or(mask, cv2.inRange(hsv, lower_color_bounds[i], upper_color_bounds[i]))
+
     mask = cv2.erode(mask, None, iterations=2)
     mask = cv2.dilate(mask, None, iterations=2)
+
     # find contours in the mask and initialize the current (x, y) center of the ball
     contours = cv2.findContours(mask.copy(), cv2.RETR_EXTERNAL, cv2.CHAIN_APPROX_SIMPLE)[-2]
 
