@@ -14,11 +14,11 @@ args = vars(args_parser.parse_args())
 green_color_range = [(29, 86, 6), (64, 255, 255), (0, 255, 0)]
 red_color_range = [(0, 195, 205), (255, 255, 255), (255, 0, 0)]
 colors = [green_color_range, red_color_range]
-points_buffer = args["buffer"]
+points_buffer_size = args["buffer"]
 
 local_camera_mode = not args.get("video", False)
 camera = cv2.VideoCapture(0) if local_camera_mode else cv2.VideoCapture(args["video"])
 
-do_track_with(title="Hand tracking", camera=camera, colors=colors, points_buffer_size=points_buffer)
+do_track_with(title="Hand tracking", camera=camera, colors=colors, points_buffer_size=points_buffer_size)
 camera.release()
 cv2.destroyAllWindows()
