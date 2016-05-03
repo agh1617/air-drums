@@ -1,5 +1,6 @@
 from collections import deque
 from speed_tracker import SpeedTracker
+from drum import Drum
 
 import cv2
 import imutils
@@ -52,12 +53,18 @@ def track_single_color(frame, hsv, tracked_points, colors, points_buffer_size, m
         thickness = int(np.sqrt(points_buffer_size / float(points_index + 1)) * 2.5)
         cv2.line(frame, tracked_points[points_index - 1], tracked_points[points_index], draw_color, thickness)
 
+    return center
+
 
 def do_track_with(title, camera, colors, points_buffer_size, min_radius=10, video_mode=False):
     colors_length = len(colors)
     points_list = [deque(maxlen=points_buffer_size) for _ in xrange(colors_length)]
     speed_tracker = SpeedTracker()
     speed_tracker.start()
+
+    drums = []
+    drums.append(Drum(((0, 0), (150, 150)), 'samples/scream.wav'))
+    drums.append(Drum(((450, 0), (600, 150)), 'samples/scream.wav'))
 
     while True:
         (grabbed, frame) = camera.read()
@@ -73,17 +80,21 @@ def do_track_with(title, camera, colors, points_buffer_size, min_radius=10, vide
         blurred = cv2.GaussianBlur(frame, (11, 11), 0)
         hsv = cv2.cvtColor(blurred, cv2.COLOR_BGR2HSV)
 
+        map(lambda drum: drum.draw(frame), drums)
+
         for color_index in xrange(colors_length):
             current_color = colors[color_index]
             points = points_list[color_index]
-            track_single_color(frame, hsv, points,
-                               colors=current_color,
-                               points_buffer_size=points_buffer_size,
-                               min_radius=min_radius)
+            center = track_single_color(frame, hsv, points,
+                                        colors=current_color,
+                                        points_buffer_size=points_buffer_size,
+                                        min_radius=min_radius)
+
+            if center:
+                map(lambda drum: drum.play(center, speed_tracker.get_speed(points)), drums)
 
             speed_position = (12, frame.shape[0] - 42 - 30 * color_index)
             speed_tracker.print_speed(frame, points, position=speed_position)
-
 
         cv2.imshow(title, frame)
         if key_pressed("q"):
