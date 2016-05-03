@@ -1,4 +1,5 @@
 from collections import deque
+from speed_tracker import SpeedTracker
 
 import cv2
 import imutils
@@ -51,8 +52,14 @@ def track_single_color(frame, hsv, tracked_points, colors, points_buffer_size, m
 def do_track_with(title, camera, colors, points_buffer_size, min_radius=10, video_mode=False):
     colors_length = len(colors)
     points_list = [deque(maxlen=points_buffer_size) for _ in xrange(colors_length)]
+    speed_tracker = SpeedTracker()
+    speed_tracker.start()
+
     while True:
         (grabbed, frame) = camera.read()
+        speed_tracker.count_frame()
+        speed_tracker.print_fps(frame)
+
         if video_mode and not grabbed:
             break
 
@@ -68,6 +75,10 @@ def do_track_with(title, camera, colors, points_buffer_size, min_radius=10, vide
                                colors=current_color,
                                points_buffer_size=points_buffer_size,
                                min_radius=min_radius)
+
+            speed_position = (12, frame.shape[0] - 42 - 30 * color_index)
+            speed_tracker.print_speed(frame, points, position=speed_position)
+
 
         cv2.imshow(title, frame)
         if key_pressed("q"):
