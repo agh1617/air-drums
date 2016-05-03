@@ -2,7 +2,7 @@ import argparse
 
 import cv2
 
-from utils.tracking import do_track_with
+from tracking.tracking import do_track_with
 
 
 args_parser = argparse.ArgumentParser()
