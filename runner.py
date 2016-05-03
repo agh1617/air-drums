@@ -2,7 +2,7 @@ import argparse
 
 import cv2
 
-from utils.utils import track_color
+from utils.utils import do_track_with
 
 
 args_parser = argparse.ArgumentParser()
@@ -21,6 +21,6 @@ if not args.get("video", False):
 else:
     camera = cv2.VideoCapture(args["video"])
 
-track_color(camera=camera, colors=colors, max_buffer_size=max_buffer_length)
+do_track_with(title="Hand tracking", camera=camera, colors=colors, max_buffer_size=max_buffer_length)
 camera.release()
 cv2.destroyAllWindows()
