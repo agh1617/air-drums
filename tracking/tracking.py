@@ -57,6 +57,7 @@ def do_track_with(title, camera, colors, points_buffer_size, min_radius=10, vide
 
     while True:
         (grabbed, frame) = camera.read()
+        frame = cv2.flip(frame, 1)
         speed_tracker.count_frame()
         speed_tracker.print_fps(frame)
 
