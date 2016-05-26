@@ -63,8 +63,10 @@ def do_track_with(title, camera, colors, points_buffer_size, min_radius=10, vide
     speed_tracker.start()
 
     drums = []
-    drums.append(Drum(((0, 0), (150, 150)), 'samples/scream.wav'))
-    drums.append(Drum(((450, 0), (600, 150)), 'samples/scream.wav'))
+    drums.append(Drum(((0, 0), (150, 150)), 'samples/drum1.wav'))
+    drums.append(Drum(((0, 300), (150, 450)), 'samples/drum2.wav'))
+    drums.append(Drum(((450, 0), (600, 150)), 'samples/drum3.wav'))
+    drums.append(Drum(((450, 300), (600, 450)), 'samples/drum4.wav'))
 
     while True:
         (grabbed, frame) = camera.read()
