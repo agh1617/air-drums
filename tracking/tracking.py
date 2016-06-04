@@ -1,21 +1,18 @@
 from collections import deque
 from speed_tracker import SpeedTracker
 from drum import Drum
+from utils import *
 
 import cv2
 import imutils
 import numpy as np
 
 
-def key_pressed(key_string):
-    key = cv2.waitKey(1) & 0xFF
-    return key == ord(key_string)
-
-
-def track_single_color(frame, hsv, tracked_points, colors, points_buffer_size, min_radius):
+def track_single_color(frame, scene, hsv, tracked_points, colors, points_buffer_size, min_radius):
     lower_color_bounds = colors[0]
     upper_color_bounds = colors[1]
     draw_color = colors[2]
+
     # construct a mask for the color "green", then perform a series of dilations and erosions
     # to remove any small blobs left in the mask
     mask = np.zeros((frame.shape[0], frame.shape[1]), dtype="uint8")
@@ -37,21 +34,7 @@ def track_single_color(frame, hsv, tracked_points, colors, points_buffer_size, m
         m = cv2.moments(centroid)
         center = (int(m["m10"] / m["m00"]), int(m["m01"] / m["m00"]))
 
-        # only proceed if the radius meets a minimum size
-        if radius > min_radius:
-            # draw the circle and centroid on the frame, then update the list of tracked points
-            cv2.circle(frame, (int(x), int(y)), int(radius), draw_color, 2)
-            cv2.circle(frame, center, 5, draw_color, -1)
-
     tracked_points.appendleft(center)
-    for points_index in xrange(1, len(tracked_points)):
-        # if either of the tracked points are None, ignore them
-        if tracked_points[points_index - 1] is None or tracked_points[points_index] is None:
-            continue
-
-        # otherwise, compute the thickness of the line and draw the connecting lines
-        thickness = int(np.sqrt(points_buffer_size / float(points_index + 1)) * 2.5)
-        cv2.line(frame, tracked_points[points_index - 1], tracked_points[points_index], draw_color, thickness)
 
     return center
 
@@ -62,13 +45,26 @@ def do_track_with(title, camera, colors, points_buffer_size, min_radius=10, vide
     speed_tracker = SpeedTracker()
     speed_tracker.start()
 
+    drums_scene = cv2.imread('graphics/drums_set.png')
+    drums_scene_dim = drums_scene.shape
+
+    frame_dim = frame_shape(camera)
+
+    def normalize_stick_position((x, y)):
+        return (int(x / frame_dim[0] * drums_scene_dim[1]), int(y / frame_dim[1] * drums_scene_dim[0]))
+
+    def color_speed_position(color_index):
+        return (12, drums_scene_dim[0] - 42 - 30 * color_index)
+
     drums = []
-    drums.append(Drum(((0, 0), (150, 150)), 'samples/drum1.wav'))
-    drums.append(Drum(((0, 300), (150, 450)), 'samples/drum2.wav'))
-    drums.append(Drum(((450, 0), (600, 150)), 'samples/drum3.wav'))
-    drums.append(Drum(((450, 300), (600, 450)), 'samples/drum4.wav'))
+    drums.append(Drum(((590, 265), (735, 365)), 'samples/drum1.wav'))
+    drums.append(Drum(((275, 75), (440, 170)), 'samples/drum2.wav'))
+    drums.append(Drum(((600, 75), (765, 165)), 'samples/drum3.wav'))
+    drums.append(Drum(((385, 270), (520, 390)), 'samples/drum4.wav'))
 
     while True:
+        current_scene = drums_scene.copy()
+
         (grabbed, frame) = camera.read()
         frame = cv2.flip(frame, 1)
         speed_tracker.count_frame()
@@ -82,23 +78,25 @@ def do_track_with(title, camera, colors, points_buffer_size, min_radius=10, vide
         blurred = cv2.GaussianBlur(frame, (11, 11), 0)
         hsv = cv2.cvtColor(blurred, cv2.COLOR_BGR2HSV)
 
-        map(lambda drum: drum.draw(frame), drums)
+        map(lambda drum: drum.draw(current_scene), drums)
 
         for color_index in xrange(colors_length):
             current_color = colors[color_index]
             points = points_list[color_index]
-            center = track_single_color(frame, hsv, points,
+            center = track_single_color(frame, current_scene, hsv, points,
                                         colors=current_color,
                                         points_buffer_size=points_buffer_size,
                                         min_radius=min_radius)
 
             if center:
-                map(lambda drum: drum.play(center, speed_tracker.get_speed(points)), drums)
+                normalized_center = normalize_stick_position(center)
+                cv2.circle(current_scene, normalized_center, 5, current_color[2], -1)
+                map(lambda drum: drum.play(normalized_center, speed_tracker.get_speed(points)), drums)
 
-            speed_position = (12, frame.shape[0] - 42 - 30 * color_index)
-            speed_tracker.print_speed(frame, points, position=speed_position)
+            speed_position = color_speed_position(color_index)
+            speed_tracker.print_speed(current_scene, points, position=speed_position)
 
-        cv2.imshow(title, frame)
+        cv2.imshow(title, current_scene)
         if key_pressed("q"):
             break
 
