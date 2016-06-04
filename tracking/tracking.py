@@ -8,26 +8,39 @@ import imutils
 import numpy as np
 
 
-def track_stick_position(frame, hsv, colors, min_radius):
-    lower_color_bounds = colors[0]
-    upper_color_bounds = colors[1]
-
+def track_stick_position(frame, hsv, stick):
     mask = np.zeros((frame.shape[0], frame.shape[1]), dtype="uint8")
 
-    for i in xrange(0, len(lower_color_bounds)):
-        mask = cv2.bitwise_or(mask, cv2.inRange(hsv, lower_color_bounds[i], upper_color_bounds[i]))
+    mask = cv2.bitwise_or(
+        mask,
+        cv2.inRange(
+            hsv,
+            stick.lower_color_bounds,
+            stick.upper_color_bounds
+        )
+    )
 
     mask = cv2.erode(mask, None, iterations=2)
     mask = cv2.dilate(mask, None, iterations=2)
 
-    contours = cv2.findContours(mask.copy(), cv2.RETR_EXTERNAL, cv2.CHAIN_APPROX_SIMPLE)[-2]
+    contours = cv2.findContours(
+        mask.copy(),
+        cv2.RETR_EXTERNAL,
+        cv2.CHAIN_APPROX_SIMPLE
+    )
+    contours = contours[-2]
 
     stick_position = None
+
     if len(contours) > 0:
         centroid = max(contours, key=cv2.contourArea)
         ((x, y), radius) = cv2.minEnclosingCircle(centroid)
-        m = cv2.moments(centroid)
-        stick_position = (int(m["m10"] / m["m00"]), int(m["m01"] / m["m00"]))
+        centroid_moments = cv2.moments(centroid)
+
+        stick_position = (
+            int(centroid_moments["m10"] / centroid_moments["m00"]),
+            int(centroid_moments["m01"] / centroid_moments["m00"])
+        )
 
     return stick_position
 
@@ -35,16 +48,12 @@ def track_stick_position(frame, hsv, colors, min_radius):
 def preprocess_frame(frame):
     resized = imutils.resize(frame, width=600)
     blurred = cv2.GaussianBlur(resized, (11, 11), 0)
-    hsv     = cv2.cvtColor(blurred, cv2.COLOR_BGR2HSV)
+    hsv = cv2.cvtColor(blurred, cv2.COLOR_BGR2HSV)
 
     return resized, hsv
 
 
-def track_sticks(camera, colors, min_radius=10, video_mode=False, title=None):
-    num_sticks = len(colors)
-
-    stick_positions = [deque(maxlen=2) for _ in xrange(num_sticks)]
-
+def track_sticks(camera, sticks, video_mode=False, title=None):
     drums_scene = cv2.imread('graphics/drums_set.png')
 
     drums = [
@@ -54,14 +63,10 @@ def track_sticks(camera, colors, min_radius=10, video_mode=False, title=None):
         Drum(((385, 270), (520, 390)), 'samples/drum4.wav')
     ]
 
+    map(lambda drum: drum.draw(drums_scene), drums)
+
     drums_scene_dim = drums_scene.shape
     frame_dim = frame_shape(camera)
-
-    def normalize_stick_position((x, y)):
-        return (int(x / frame_dim[0] * drums_scene_dim[1]), int(y / frame_dim[1] * drums_scene_dim[0]))
-
-    def color_speed_position(stick_num):
-        return (12, drums_scene_dim[0] - 42 - 30 * stick_num)
 
     speed_tracker = SpeedTracker()
     speed_tracker.start()
@@ -76,28 +81,38 @@ def track_sticks(camera, colors, min_radius=10, video_mode=False, title=None):
             break
 
         frame, hsv = preprocess_frame(frame)
-        
+
         speed_tracker.count_frame()
         speed_tracker.print_fps(frame)
 
-        map(lambda drum: drum.draw(current_scene), drums)
+        for idx, stick in enumerate(sticks):
+            stick_position = track_stick_position(frame, hsv, stick)
 
-        for stick_num in xrange(num_sticks):
-            color = colors[stick_num]
+            if not stick_position:
+                continue
 
-            prev_positions = stick_positions[stick_num]
-            curr_position  = track_stick_position(frame, hsv, colors=color, min_radius=min_radius)
+            stick_position = (
+                int(stick_position[0] / frame_dim[0] * drums_scene_dim[1]),
+                int(stick_position[1] / frame_dim[1] * drums_scene_dim[0])
+            )
 
-            if curr_position:
-                normalized_position = normalize_stick_position(curr_position)
-                prev_positions.appendleft(normalized_position)
+            stick.positions.appendleft(stick_position)
+            stick.draw(current_scene)
 
-                cv2.circle(current_scene, normalized_position, 5, color[2], -1)
+            stick_speed = speed_tracker.get_speed(stick.positions)
 
-                map(lambda drum: drum.play(normalized_position, speed_tracker.get_speed(prev_positions)), drums)
+            map(lambda drum: drum.play(stick_position, stick_speed), drums)
 
-            speed_position = color_speed_position(stick_num)
-            speed_tracker.print_speed(current_scene, prev_positions, position=speed_position)
+            speed_tracker_position = (
+                12,
+                drums_scene_dim[0] - 42 - 30 * idx
+            )
+
+            speed_tracker.print_speed(
+                current_scene,
+                stick.positions,
+                position=speed_tracker_position
+            )
 
         cv2.imshow(title, current_scene)
 
