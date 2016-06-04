@@ -9,13 +9,10 @@ from utils import frame_shape, key_pressed
 def track_stick_position(frame, hsv, stick):
     mask = np.zeros((frame.shape[0], frame.shape[1]), dtype="uint8")
 
-    mask = cv2.bitwise_or(
-        mask,
-        cv2.inRange(
-            hsv,
-            stick.lower_color_bounds,
-            stick.upper_color_bounds
-        )
+    mask = cv2.inRange(
+        hsv,
+        stick.lower_color_bounds,
+        stick.upper_color_bounds
     )
 
     mask = cv2.erode(mask, None, iterations=2)
