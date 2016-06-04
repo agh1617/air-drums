@@ -9,15 +9,19 @@ from utils import frame_shape, key_pressed
 def track_stick_position(frame, hsv, stick):
     mask = np.zeros((frame.shape[0], frame.shape[1]), dtype="uint8")
 
+    # construct a mask for the stick color
     mask = cv2.inRange(
         hsv,
         stick.lower_color_bounds,
         stick.upper_color_bounds
     )
 
+    # perform a series of dilations and erosions to remove any small
+    # blobs left in the mask
     mask = cv2.erode(mask, None, iterations=2)
     mask = cv2.dilate(mask, None, iterations=2)
 
+    # find contours in the mask
     contours = cv2.findContours(
         mask.copy(),
         cv2.RETR_EXTERNAL,
@@ -27,9 +31,10 @@ def track_stick_position(frame, hsv, stick):
 
     stick_position = None
 
+    # find the largest contour in the mask, then use
+	# it to compute the centroid of stick's position
     if len(contours) > 0:
         centroid = max(contours, key=cv2.contourArea)
-        ((x, y), radius) = cv2.minEnclosingCircle(centroid)
         centroid_moments = cv2.moments(centroid)
 
         stick_position = (
@@ -41,8 +46,15 @@ def track_stick_position(frame, hsv, stick):
 
 
 def preprocess_frame(frame):
+    # resize the frame - allows to process the frame faster,
+    # leading to an increase in FPS
     resized = imutils.resize(frame, width=600)
+
+    # blur the frame - reduces high frequency noise,
+    # allowing to focus on the structural objects inside the
     blurred = cv2.GaussianBlur(resized, (11, 11), 0)
+
+    # convert frame to HSV color space
     hsv = cv2.cvtColor(blurred, cv2.COLOR_BGR2HSV)
 
     return resized, hsv
