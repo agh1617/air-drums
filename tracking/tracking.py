@@ -51,7 +51,7 @@ def preprocess_frame(frame):
     return resized, hsv
 
 
-def track_sticks(camera, sticks, video_mode=False, title=None):
+def track_sticks(camera, sticks, video_mode=False, debug_mode=False, title=None):
     drums_scene = cv2.imread('graphics/drums_set.png')
 
     drums = [
@@ -81,7 +81,9 @@ def track_sticks(camera, sticks, video_mode=False, title=None):
         frame, hsv = preprocess_frame(frame)
 
         speed_tracker.count_frame()
-        speed_tracker.print_fps(current_scene)
+
+        if debug_mode:
+            speed_tracker.print_fps(current_scene)
 
         for idx, stick in enumerate(sticks):
             stick_position = track_stick_position(frame, hsv, stick)
@@ -101,11 +103,12 @@ def track_sticks(camera, sticks, video_mode=False, title=None):
 
             map(lambda drum: drum.play(stick_position, stick_speed), drums)
 
-            speed_tracker.print_speed(
-                current_scene,
-                stick.positions,
-                idx
-            )
+            if debug_mode:
+                speed_tracker.print_speed(
+                    current_scene,
+                    stick.positions,
+                    idx
+                )
 
         cv2.imshow(title, current_scene)
 
