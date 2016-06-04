@@ -1,11 +1,9 @@
-from collections import deque
+import cv2, imutils
+import numpy as np
+
 from speed_tracker import SpeedTracker
 from drum import Drum
-from utils import *
-
-import cv2
-import imutils
-import numpy as np
+from utils import frame_shape, key_pressed
 
 
 def track_stick_position(frame, hsv, stick):

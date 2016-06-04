@@ -1,5 +1,4 @@
-import time
-import cv2
+import cv2, time
 
 
 class SpeedTracker:
