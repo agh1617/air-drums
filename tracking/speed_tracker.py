@@ -25,12 +25,12 @@ class SpeedTracker:
         else:
             return 0.0
 
-    def print_fps(self, frame, position=None):
-        position = position or (12, frame.shape[0] - 12)
-        cv2.putText(frame, "fps: " + str(self.fps), position,
+    def print_fps(self, scene, position=None):
+        position = position or (10, 50)
+        cv2.putText(scene, "fps: " + str(self.fps), position,
                     cv2.FONT_HERSHEY_SIMPLEX, 1, (255, 255, 255), 2)
 
-    def print_speed(self, frame, deque, position=None):
-        position = position or (12, frame.shape[0] - 42)
-        cv2.putText(frame, "speed: " + str(self.get_speed(deque)) + " px/s",
+    def print_speed(self, scene, deque, idx, position=None):
+        position = position or (10, scene.shape[0] - 50 - 30 * idx)
+        cv2.putText(scene, "speed: " + str(self.get_speed(deque)) + " px/s",
                     position, cv2.FONT_HERSHEY_SIMPLEX, 1, (255, 255, 255), 2)

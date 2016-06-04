@@ -81,7 +81,7 @@ def track_sticks(camera, sticks, video_mode=False, title=None):
         frame, hsv = preprocess_frame(frame)
 
         speed_tracker.count_frame()
-        speed_tracker.print_fps(frame)
+        speed_tracker.print_fps(current_scene)
 
         for idx, stick in enumerate(sticks):
             stick_position = track_stick_position(frame, hsv, stick)
@@ -101,15 +101,10 @@ def track_sticks(camera, sticks, video_mode=False, title=None):
 
             map(lambda drum: drum.play(stick_position, stick_speed), drums)
 
-            speed_tracker_position = (
-                12,
-                drums_scene_dim[0] - 42 - 30 * idx
-            )
-
             speed_tracker.print_speed(
                 current_scene,
                 stick.positions,
-                position=speed_tracker_position
+                idx
             )
 
         cv2.imshow(title, current_scene)
