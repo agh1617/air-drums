@@ -60,6 +60,13 @@ def preprocess_frame(frame):
     return resized, hsv
 
 
+def build_preview(frame, size=300):
+    frame_preview = frame.copy()
+    frame_preview = imutils.resize(frame_preview, width=size)
+    preview_dim = frame_preview.shape
+    return frame_preview, preview_dim
+
+
 def track_sticks(camera, sticks, video_mode=False, debug_mode=False, title=None):
     drums_scene = cv2.imread('graphics/drums_set.png')
 
@@ -106,6 +113,7 @@ def track_sticks(camera, sticks, video_mode=False, debug_mode=False, title=None)
             )
 
             stick.positions.appendleft(stick_position)
+
             stick.draw(current_scene)
 
             stick_speed = speed_tracker.get_speed(stick.positions)
@@ -118,6 +126,14 @@ def track_sticks(camera, sticks, video_mode=False, debug_mode=False, title=None)
                     stick.positions,
                     idx
                 )
+
+        # build frame preview, paste it in bottom-right corner of scene
+        frame_preview, preview_dim = build_preview(frame)
+
+        current_scene[
+            (drums_scene_dim[0] - preview_dim[0] - 20):(drums_scene_dim[0] - 20),
+            (drums_scene_dim[1] - preview_dim[1] - 20):(drums_scene_dim[1] - 20)
+        ] = frame_preview
 
         cv2.imshow(title, current_scene)
 
