@@ -11,9 +11,8 @@ args = vars(args_parser.parse_args())
 
 # colors ranges in format (lower_bound - hsv, upper_bound - hsv, draw_color - bgr)
 sticks = [
-    # Stick(((45, 80, 80), (80, 255, 255), (0, 255, 0))), # old green
-    Stick(((44, 68, 111), (111, 160, 255), (0, 255, 0))),
-    Stick(((90, 99, 156), (199, 210, 255), (250, 0, 0)))
+    Stick(((95, 180, 50), (255, 255, 255), (0, 255, 0))),  # blue
+    Stick(((113, 56, 164), (141, 255, 255), (0, 0, 250)))  # purple
 ]
 
 video_mode = not args.get("video", False)
