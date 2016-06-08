@@ -71,10 +71,10 @@ def track_sticks(camera, sticks, video_mode=False, debug_mode=False, title=None)
     drums_scene = cv2.imread('graphics/drums_set.png')
 
     drums = [
-        Drum(((590, 265), (735, 365)), 'samples/drum1.wav'),
-        Drum(((275, 75),  (440, 170)), 'samples/drum2.wav'),
-        Drum(((600, 75),  (765, 165)), 'samples/drum3.wav'),
-        Drum(((385, 270), (520, 390)), 'samples/drum4.wav')
+        Drum(((590, 265), (735, 365)), 'samples/drumset_2/tom.wav'),
+        Drum(((275, 75),  (440, 170)), 'samples/drumset_2/crash_1.wav'),
+        Drum(((600, 75),  (765, 165)), 'samples/drumset_2/crash_2.wav'),
+        Drum(((385, 270), (520, 390)), 'samples/drumset_2/snare.wav')
     ]
 
     map(lambda drum: drum.draw(drums_scene), drums)
